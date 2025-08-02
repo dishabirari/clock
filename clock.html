@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Photo Clock</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the clock hands and layout */
+        body {
+            background-color: #f0f4f8; /* Light gray background color */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .clock-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            background: #ffffff; /* White clock background */
+            box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff; /* Neutral shadows */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s ease-in-out;
+            margin: 2rem;
+            border: 2px solid #000; /* Added black border */
+        }
+
+        .clock-container:hover {
+            transform: scale(1.05);
+        }
+
+        /* Styles for the analog clock hands */
+        .hand {
+            position: absolute;
+            background: #333;
+            border-radius: 50%;
+            transform-origin: bottom center;
+            z-index: 5;
+        }
+
+        .hour-hand {
+            width: 8px;
+            height: 100px;
+            top: 125px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            background: #333;
+        }
+
+        .minute-hand {
+            width: 6px;
+            height: 140px;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            background: #555;
+        }
+
+        .second-hand {
+            width: 2px;
+            height: 180px;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+            background: #ef4444; /* red-500 */
+        }
+        
+        /* Center dot for the hands */
+        .center-dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #333;
+            border-radius: 50%;
+            z-index: 15;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+
+        /* Number markers */
+        .clock-number {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+        #number-12 { top: 20px; left: 50%; transform: translateX(-50%); }
+        #number-3 { top: 50%; right: 20px; transform: translateY(-50%); }
+        #number-6 { bottom: 20px; left: 50%; transform: translateX(-50%); }
+        #number-9 { top: 50%; left: 20px; transform: translateY(-50%); }
+
+
+        .photo-slot {
+            position: absolute;
+            width: 120px; /* Adjusted size */
+            height: 120px; /* Adjusted size */
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), 2px 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .photo-slot:hover {
+            transform: scale(1.1);
+        }
+
+        .photo-slot .add-photo-text {
+            color: #4B5563; /* gray-600 */
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 0.5rem;
+            line-height: 1.2;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .photo-slot .photo-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        /* Class to show image and hide text */
+        .photo-slot.has-image .add-photo-text {
+            opacity: 0;
+        }
+
+        .photo-slot.has-image .photo-image {
+            opacity: 1;
+        }
+
+        /* Positioning the photo slots */
+        #photo-1 { top: 50px; left: 50%; transform: translateX(-50%); }
+        #photo-2 { top: 50%; right: 50px; transform: translateY(-50%); }
+        #photo-3 { bottom: 50px; left: 50%; transform: translateX(-50%); }
+        #photo-4 { top: 50%; left: 50px; transform: translateY(-50%); }
+
+        .file-input { display: none; }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
+    <div class="max-w-xl w-full text-center">
+        <!-- Main clock container -->
+        <div class="clock-container">
+            <!-- Clock numbers -->
+            <div id="number-12" class="clock-number">12</div>
+            <div id="number-3" class="clock-number">3</div>
+            <div id="number-6" class="clock-number">6</div>
+            <div id="number-9" class="clock-number">9</div>
+            
+            <!-- Analog clock hands -->
+            <div id="hour-hand" class="hand hour-hand"></div>
+            <div id="minute-hand" class="hand minute-hand"></div>
+            <div id="second-hand" class="hand second-hand"></div>
+            <div class="center-dot"></div>
+            
+            <!-- Photo slots for images -->
+            <div id="photo-1" class="photo-slot">
+                <span class="add-photo-text">Add Photo</span>
+                <img id="image-1" src="" alt="User Photo" class="photo-image">
+                <input type="file" id="file-1" class="file-input" accept="image/*">
+            </div>
+            <div id="photo-2" class="photo-slot">
+                <span class="add-photo-text">Add Photo</span>
+                <img id="image-2" src="" alt="User Photo" class="photo-image">
+                <input type="file" id="file-2" class="file-input" accept="image/*">
+            </div>
+            <div id="photo-3" class="photo-slot">
+                <span class="add-photo-text">Add Photo</span>
+                <img id="image-3" src="" alt="User Photo" class="photo-image">
+                <input type="file" id="file-3" class="file-input" accept="image/*">
+            </div>
+            <div id="photo-4" class="photo-slot">
+                <span class="add-photo-text">Add Photo</span>
+                <img id="image-4" src="" alt="User Photo" class="photo-image">
+                <input type="file" id="file-4" class="file-input" accept="image/*">
+            </div>
+        </div>
+        
+        <div id="message-box" class="mt-4 p-3 bg-gray-200 text-gray-700 rounded-lg shadow-inner hidden"></div>
+    </div>
+
+    <script>
+        // Get references to all the elements
+        const hourHand = document.getElementById('hour-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const secondHand = document.getElementById('second-hand');
+        const messageBox = document.getElementById('message-box');
+        
+        // Photo slots and their corresponding file inputs
+        const photoSlots = [
+            { id: '1', slot: document.getElementById('photo-1'), img: document.getElementById('image-1'), file: document.getElementById('file-1') },
+            { id: '2', slot: document.getElementById('photo-2'), img: document.getElementById('image-2'), file: document.getElementById('file-2') },
+            { id: '3', slot: document.getElementById('photo-3'), img: document.getElementById('image-3'), file: document.getElementById('file-3') },
+            { id: '4', slot: document.getElementById('photo-4'), img: document.getElementById('image-4'), file: document.getElementById('file-4') }
+        ];
+
+        // Function to show a message to the user
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.remove('bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800', 'bg-gray-200', 'text-gray-700');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-200', 'text-red-800');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-200', 'text-green-800');
+            } else {
+                messageBox.classList.add('bg-gray-200', 'text-gray-700');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000); // Hide message after 3 seconds
+        }
+
+        // Function to update the analog clock
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            // Calculate and set rotation for analog hands
+            const hourDeg = (hours % 12) * 30 + (minutes * 0.5); // 360/12 = 30 deg/hour
+            const minuteDeg = minutes * 6 + (seconds * 0.1); // 360/60 = 6 deg/minute
+            const secondDeg = seconds * 6; // 360/60 = 6 deg/second
+
+            hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+            minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+            secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+        }
+        
+        // Set the clock to update every second
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call to set the time immediately
+
+        // Add event listeners for each photo slot
+        photoSlots.forEach(slot => {
+            // Clicking the photo slot itself triggers the file input
+            slot.slot.addEventListener('click', () => {
+                slot.file.click();
+            });
+
+            // Handle file selection
+            slot.file.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    // Use FileReader to read the image data
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const base64Image = e.target.result;
+                        slot.img.src = base64Image;
+                        slot.slot.classList.add('has-image');
+                        showMessage(`Photo added successfully!`, 'success');
+                    };
+                    reader.onerror = function() {
+                        showMessage('Failed to load image. Please try again.', 'error');
+                    };
+                    reader.readAsDataURL(file); // Read the file as a data URL
+                }
+            });
+
+            // Handle double-tap to remove an image
+            slot.slot.addEventListener('dblclick', (event) => {
+                // Prevent default behavior to avoid issues on some touch devices
+                event.preventDefault(); 
+                
+                // Only remove the image if a photo is present
+                if (slot.slot.classList.contains('has-image')) {
+                    slot.img.src = '';
+                    slot.slot.classList.remove('has-image');
+                    showMessage('Photo removed successfully!', 'success');
+                }
+            });
+        });
+
+        // The photos are no longer loaded from local storage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Nothing to do here since photos are not saved
+        });
+    </script>
+</body>
+</html>
