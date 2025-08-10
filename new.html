@@ -363,39 +363,50 @@
             </div>
         </div>
 
-        <!-- New status table -->
-        <div class="status-table">
-            <h2 class="text-xl font-bold mb-4">Photo Status</h2>
-            <table class="w-full">
-                <thead>
-                    <tr>
-                        <th>Photo Slot</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr id="status-row-1">
-                        <td>12 O'Clock</td>
-                        <td id="status-1" class="status-icon empty">❌</td>
-                    </tr>
-                    <tr id="status-row-2">
-                        <td>3 O'Clock</td>
-                        <td id="status-2" class="status-icon empty">❌</td>
-                    </tr>
-                    <tr id="status-row-3">
-                        <td>6 O'Clock</td>
-                        <td id="status-3" class="status-icon empty">❌</td>
-                    </tr>
-                    <tr id="status-row-4">
-                        <td>9 O'Clock</td>
-                        <td id="status-4" class="status-icon empty">❌</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- New status table and Submit button -->
+        <div class="flex flex-col items-center">
+            <div class="status-table">
+                <h2 class="text-xl font-bold mb-4">Photo Status</h2>
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Photo Slot</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="status-row-1">
+                            <td>12 O'Clock</td>
+                            <td id="status-1" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-2">
+                            <td>3 O'Clock</td>
+                            <td id="status-2" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-3">
+                            <td>6 O'Clock</td>
+                            <td id="status-3" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-4">
+                            <td>9 O'Clock</td>
+                            <td id="status-4" class="status-icon empty">❌</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button id="submit-btn" class="mt-4 px-6 py-3 bg-blue-500 text-white font-bold rounded-full shadow-lg hover:bg-blue-600 transition-colors">Submit Photos</button>
         </div>
     </div>
     
     <div id="message-box" class="mt-4 p-3 bg-gray-200 text-gray-700 rounded-lg shadow-inner hidden"></div>
+
+    <!-- Processing Modal -->
+    <div id="processing-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <p class="mt-4 text-gray-600">Your clock is in process.</p>
+            <button id="close-modal-btn" class="mt-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Close</button>
+        </div>
+    </div>
 
     <script>
         // Get references to all the elements
@@ -403,6 +414,9 @@
         const minuteHand = document.getElementById('minute-hand');
         const secondHand = document.getElementById('second-hand');
         const messageBox = document.getElementById('message-box');
+        const submitBtn = document.getElementById('submit-btn');
+        const processingModal = document.getElementById('processing-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
         
         // Photo slots and their corresponding file inputs
         const photoItems = [
@@ -485,6 +499,25 @@
             }
         }
         
+        // Function to check if all photo slots have an image
+        function checkAllPhotosAdded() {
+            return photoItems.every(item => item.group.classList.contains('has-image'));
+        }
+
+        // Add event listener for the submit button
+        submitBtn.addEventListener('click', () => {
+            if (checkAllPhotosAdded()) {
+                processingModal.classList.remove('hidden');
+            } else {
+                showMessage('Please add all four photos before submitting.', 'error');
+            }
+        });
+
+        // Add event listener for the modal close button
+        closeModalBtn.addEventListener('click', () => {
+            processingModal.classList.add('hidden');
+        });
+
         // Add event listeners for each photo item
         photoItems.forEach(item => {
             let isDragging = false;
