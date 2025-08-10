@@ -278,6 +278,11 @@
         .status-table .status-icon.empty {
             color: #EF4444; /* red-500 */
         }
+        
+        /* High z-index for the modal to prevent clock hands from overlapping */
+        #processing-modal {
+            z-index: 9999; 
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
@@ -403,7 +408,7 @@
     <!-- Processing Modal -->
     <div id="processing-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl text-center">
-            <p class="mt-4 text-gray-600">Your clock is in process.</p>
+            <p class="mt-4 text-gray-600">Your clock is in process. <b>Thank you</b></p>
             <button id="close-modal-btn" class="mt-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Close</button>
         </div>
     </div>
