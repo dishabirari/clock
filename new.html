@@ -394,7 +394,7 @@
                     </tbody>
                 </table>
             </div>
-            <button id="submit-btn" class="mt-4 px-6 py-3 bg-blue-500 text-white font-bold rounded-full shadow-lg hover:bg-blue-600 transition-colors">Submit Photos</button>
+            <button id="submit-btn" class="mt-4 px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-colors cursor-not-allowed" disabled>Submit Photos</button>
         </div>
     </div>
     
@@ -483,7 +483,7 @@
             item.backgroundImg.style.setProperty('--translate-y', `${translateY}px`);
         }
         
-        // Function to update the status table
+        // Function to update the status table and button state
         function updateStatus(id, hasImage) {
             const statusElement = statusIcons[id];
             if (statusElement) {
@@ -497,6 +497,7 @@
                     statusElement.classList.add('empty');
                 }
             }
+            updateSubmitButtonState();
         }
         
         // Function to check if all photo slots have an image
@@ -504,8 +505,22 @@
             return photoItems.every(item => item.group.classList.contains('has-image'));
         }
 
+        // Function to update the submit button's appearance and functionality
+        function updateSubmitButtonState() {
+            if (checkAllPhotosAdded()) {
+                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                submitBtn.removeAttribute('disabled');
+            } else {
+                submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.setAttribute('disabled', 'true');
+            }
+        }
+        
         // Add event listener for the submit button
         submitBtn.addEventListener('click', () => {
+            // This check is a safeguard, but the disabled attribute should prevent this from firing
             if (checkAllPhotosAdded()) {
                 processingModal.classList.remove('hidden');
             } else {
@@ -659,6 +674,9 @@
                 });
             }
         });
+
+        // Call this once on page load to set the initial state
+        updateSubmitButtonState();
     </script>
 </body>
 </html>
