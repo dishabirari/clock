@@ -125,19 +125,20 @@
             align-items: center;
         }
 
-        /* The full-size photo that will be BLURRED */
+        /* The full-size photo that will be BLURRED, now with an SVG filter */
         .background-photo-blur {
             position: absolute;
             width: 150px; /* Sizing the container for the image */
             height: 150px;
             object-fit: cover;
-            filter: blur(8px); /* Blur is applied here */
+            filter: url(#photo-blur-filter); /* Use the SVG filter for blurring */
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
             z-index: 0;
             pointer-events: none; /* Prevents clicks on this layer */
             border-radius: 10px;
-            transform: scale(var(--zoom-level, 1)) translate(var(--translate-x, 0px), var(--translate-y, 0px));
+            /* Using translate3d for smoother animation and to prevent blurring */
+            transform: scale(var(--zoom-level, 1)) translate3d(var(--translate-x, 0px), var(--translate-y, 0px), 0);
         }
 
         /* Photo slot styles (for the CLEAR, circular part) */
@@ -182,8 +183,8 @@
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
             z-index: 1;
-            /* Use CSS variables for drag and zoom */
-            transform: scale(var(--zoom-level, 1)) translate(var(--translate-x, 0px), var(--translate-y, 0px));
+            /* Using translate3d for smoother animation and to prevent blurring */
+            transform: scale(var(--zoom-level, 1)) translate3d(var(--translate-x, 0px), var(--translate-y, 0px), 0);
         }
 
         /* Style for when a photo is present */
@@ -280,6 +281,13 @@
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
+    <!-- Hidden SVG for the blur filter definition -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        <filter id="photo-blur-filter">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
+        </filter>
+    </svg>
+
     <div class="main-container">
         <!-- Main clock container -->
         <div class="clock-container">
@@ -311,7 +319,6 @@
                     <button class="zoom-out" data-photo-id="1">-</button>
                 </div>
             </div>
-
             <div id="photo-group-2" class="photo-group">
                 <div class="photo-and-controls">
                     <img id="background-image-2" src="" alt="Blurred User Photo" class="background-photo-blur">
@@ -326,7 +333,6 @@
                     <button class="zoom-out" data-photo-id="2">-</button>
                 </div>
             </div>
-
             <div id="photo-group-3" class="photo-group">
                 <div class="photo-and-controls">
                     <img id="background-image-3" src="" alt="Blurred User Photo" class="background-photo-blur">
@@ -341,7 +347,6 @@
                     <button class="zoom-out" data-photo-id="3">-</button>
                 </div>
             </div>
-
             <div id="photo-group-4" class="photo-group">
                 <div class="photo-and-controls">
                     <img id="background-image-4" src="" alt="Blurred User Photo" class="background-photo-blur">
@@ -479,7 +484,7 @@
                 }
             }
         }
-
+        
         // Add event listeners for each photo item
         photoItems.forEach(item => {
             let isDragging = false;
@@ -501,10 +506,12 @@
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const base64Image = e.target.result;
+                        // Set the clear and blurred image sources simultaneously
                         item.img.src = base64Image;
                         item.backgroundImg.src = base64Image;
                         item.group.classList.add('has-image');
                         
+                        // Reset zoom/position and show success message
                         currentScale = 1;
                         updateImageTransform(item, currentScale, 0, 0);
                         showMessage(`Photo added successfully to slot ${item.id}!`, 'success');
@@ -541,8 +548,8 @@
                     item.img.classList.add('dragging');
                     startX = e.clientX;
                     startY = e.clientY;
-                    initialX = parseFloat(item.group.style.getPropertyValue('--translate-x')) || 0;
-                    initialY = parseFloat(item.group.style.getPropertyValue('--translate-y')) || 0;
+                    initialX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    initialY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
                 }
             });
 
@@ -555,8 +562,8 @@
                     const touch = e.touches[0];
                     startX = touch.clientX;
                     startY = touch.clientY;
-                    initialX = parseFloat(item.group.style.getPropertyValue('--translate-x')) || 0;
-                    initialY = parseFloat(item.group.style.getPropertyValue('--translate-y')) || 0;
+                    initialX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    initialY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
                 }
             });
 
@@ -622,4 +629,3 @@
     </script>
 </body>
 </html>
-
