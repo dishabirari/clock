@@ -135,7 +135,15 @@
             height: 100%;
             object-fit: cover;
             opacity: 0; /* Initially hidden */
-            transition: opacity 0.2s ease-in-out;
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; /* Added transform transition */
+            transform: scale(1);
+        }
+
+        .photo-slot.has-image .photo-image {
+            cursor: grab; /* Change cursor to grab when there's an image */
+        }
+        .photo-slot.has-image .photo-image.dragging {
+            cursor: grabbing; /* Change cursor to grabbing while dragging */
         }
 
         /* Class to show image and hide text */
@@ -154,6 +162,43 @@
         #photo-4 { top: 50%; left: 50px; transform: translateY(-50%); }
 
         .file-input { display: none; }
+
+        /* Styles for the new zoom controls */
+        .photo-controls {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .photo-slot:hover .photo-controls, .photo-slot.has-image .photo-controls {
+            opacity: 1;
+        }
+
+        .photo-controls button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .photo-controls button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
@@ -177,21 +222,38 @@
                 <span class="add-photo-text">Add Photo</span>
                 <img id="image-1" src="" alt="User Photo" class="photo-image">
                 <input type="file" id="file-1" class="file-input" accept="image/*">
+                <!-- New zoom controls for the photo -->
+                <div class="photo-controls">
+                    <button class="zoom-in" data-photo-id="1">+</button>
+                    <button class="zoom-out" data-photo-id="1">-</button>
+                </div>
             </div>
             <div id="photo-2" class="photo-slot">
                 <span class="add-photo-text">Add Photo</span>
                 <img id="image-2" src="" alt="User Photo" class="photo-image">
                 <input type="file" id="file-2" class="file-input" accept="image/*">
+                <div class="photo-controls">
+                    <button class="zoom-in" data-photo-id="2">+</button>
+                    <button class="zoom-out" data-photo-id="2">-</button>
+                </div>
             </div>
             <div id="photo-3" class="photo-slot">
                 <span class="add-photo-text">Add Photo</span>
                 <img id="image-3" src="" alt="User Photo" class="photo-image">
                 <input type="file" id="file-3" class="file-input" accept="image/*">
+                <div class="photo-controls">
+                    <button class="zoom-in" data-photo-id="3">+</button>
+                    <button class="zoom-out" data-photo-id="3">-</button>
+                </div>
             </div>
             <div id="photo-4" class="photo-slot">
                 <span class="add-photo-text">Add Photo</span>
                 <img id="image-4" src="" alt="User Photo" class="photo-image">
                 <input type="file" id="file-4" class="file-input" accept="image/*">
+                <div class="photo-controls">
+                    <button class="zoom-in" data-photo-id="4">+</button>
+                    <button class="zoom-out" data-photo-id="4">-</button>
+                </div>
             </div>
         </div>
         
@@ -251,11 +313,26 @@
         setInterval(updateClock, 1000);
         updateClock(); // Initial call to set the time immediately
 
+        // Function to update the image transform (zoom and position)
+        function updateImageTransform(imgElement, scale, translateX, translateY) {
+            imgElement.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+            imgElement.dataset.zoomLevel = scale;
+            imgElement.dataset.translateX = translateX;
+            imgElement.dataset.translateY = translateY;
+        }
+
         // Add event listeners for each photo slot
         photoSlots.forEach(slot => {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+
             // Clicking the photo slot itself triggers the file input
-            slot.slot.addEventListener('click', () => {
-                slot.file.click();
+            slot.slot.addEventListener('click', (event) => {
+                // Only open file input if click isn't on a control button and not a drag action
+                if (!event.target.closest('.photo-controls') && !slot.isDragged) {
+                    slot.file.click();
+                }
+                slot.isDragged = false;
             });
 
             // Handle file selection
@@ -268,6 +345,8 @@
                         const base64Image = e.target.result;
                         slot.img.src = base64Image;
                         slot.slot.classList.add('has-image');
+                        // Reset zoom and position when a new photo is added
+                        updateImageTransform(slot.img, 1, 0, 0);
                         showMessage(`Photo added successfully!`, 'success');
                     };
                     reader.onerror = function() {
@@ -282,13 +361,108 @@
                 // Prevent default behavior to avoid issues on some touch devices
                 event.preventDefault(); 
                 
-                // Only remove the image if a photo is present
-                if (slot.slot.classList.contains('has-image')) {
+                // Only remove the image if a photo is present and the click is not on controls
+                if (slot.slot.classList.contains('has-image') && !event.target.closest('.photo-controls')) {
                     slot.img.src = '';
                     slot.slot.classList.remove('has-image');
+                    // Reset zoom and position on removal
+                    updateImageTransform(slot.img, 1, 0, 0);
                     showMessage('Photo removed successfully!', 'success');
                 }
             });
+
+            // --- Drag and Drop Functionality ---
+            slot.img.addEventListener('mousedown', (e) => {
+                if (slot.slot.classList.contains('has-image')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = true;
+                    slot.img.classList.add('dragging');
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialX = parseFloat(slot.img.dataset.translateX) || 0;
+                    initialY = parseFloat(slot.img.dataset.translateY) || 0;
+                }
+            });
+
+            slot.img.addEventListener('touchstart', (e) => {
+                if (slot.slot.classList.contains('has-image')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = true;
+                    slot.img.classList.add('dragging');
+                    const touch = e.touches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                    initialX = parseFloat(slot.img.dataset.translateX) || 0;
+                    initialY = parseFloat(slot.img.dataset.translateY) || 0;
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const newX = initialX + dx;
+                    const newY = initialY + dy;
+                    const zoomLevel = parseFloat(slot.img.dataset.zoomLevel) || 1;
+                    updateImageTransform(slot.img, zoomLevel, newX, newY);
+                    slot.isDragged = true;
+                }
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - startX;
+                    const dy = touch.clientY - startY;
+                    const newX = initialX + dx;
+                    const newY = initialY + dy;
+                    const zoomLevel = parseFloat(slot.img.dataset.zoomLevel) || 1;
+                    updateImageTransform(slot.img, zoomLevel, newX, newY);
+                    slot.isDragged = true;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    slot.img.classList.remove('dragging');
+                }
+            });
+
+            document.addEventListener('touchend', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    slot.img.classList.remove('dragging');
+                }
+            });
+
+            // --- Zoom Functionality ---
+            const zoomInBtn = slot.slot.querySelector('.zoom-in');
+            const zoomOutBtn = slot.slot.querySelector('.zoom-out');
+
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const currentZoom = parseFloat(slot.img.dataset.zoomLevel) || 1;
+                    const newZoom = currentZoom < 2 ? currentZoom + 0.1 : currentZoom;
+                    const translateX = parseFloat(slot.img.dataset.translateX) || 0;
+                    const translateY = parseFloat(slot.img.dataset.translateY) || 0;
+                    updateImageTransform(slot.img, newZoom, translateX, translateY);
+                });
+            }
+
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const currentZoom = parseFloat(slot.img.dataset.zoomLevel) || 1;
+                    const newZoom = currentZoom > 1 ? currentZoom - 0.1 : currentZoom;
+                    const translateX = parseFloat(slot.img.dataset.translateX) || 0;
+                    const translateY = parseFloat(slot.img.dataset.translateY) || 0;
+                    updateImageTransform(slot.img, newZoom, translateX, translateY);
+                });
+            }
         });
 
         // The photos are no longer loaded from local storage on page load
