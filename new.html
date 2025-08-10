@@ -313,7 +313,7 @@
                 <div class="photo-and-controls">
                     <img id="background-image-1" src="" alt="Blurred User Photo" class="background-photo-blur">
                     <div id="photo-1" class="photo-slot">
-                        <span class="add-photo-text">Add Photo</span>
+                        <span class="add-photo-text">Add Photo1</span>
                         <img id="image-1" src="" alt="User Photo" class="photo-image">
                         <input type="file" id="file-1" class="file-input" accept="image/*">
                     </div>
@@ -328,7 +328,7 @@
                 <div class="photo-and-controls">
                     <img id="background-image-2" src="" alt="Blurred User Photo" class="background-photo-blur">
                     <div id="photo-2" class="photo-slot">
-                        <span class="add-photo-text">Add Photo</span>
+                        <span class="add-photo-text">Add Photo2</span>
                         <img id="image-2" src="" alt="User Photo" class="photo-image">
                         <input type="file" id="file-2" class="file-input" accept="image/*">
                     </div>
@@ -342,7 +342,7 @@
                 <div class="photo-and-controls">
                     <img id="background-image-3" src="" alt="Blurred User Photo" class="background-photo-blur">
                     <div id="photo-3" class="photo-slot">
-                        <span class="add-photo-text">Add Photo</span>
+                        <span class="add-photo-text">Add Photo3</span>
                         <img id="image-3" src="" alt="User Photo" class="photo-image">
                         <input type="file" id="file-3" class="file-input" accept="image/*">
                     </div>
@@ -356,7 +356,7 @@
                 <div class="photo-and-controls">
                     <img id="background-image-4" src="" alt="Blurred User Photo" class="background-photo-blur">
                     <div id="photo-4" class="photo-slot">
-                        <span class="add-photo-text">Add Photo</span>
+                        <span class="add-photo-text">Add Photo4</span>
                         <img id="image-4" src="" alt="User Photo" class="photo-image">
                         <input type="file" id="file-4" class="file-input" accept="image/*">
                     </div>
@@ -408,7 +408,7 @@
     <!-- Processing Modal -->
     <div id="processing-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl text-center">
-            <p class="mt-4 text-gray-600">Your clock is in process. <b>Thank you</b></p>
+            <p class="mt-4 text-gray-600">Your clock is in process.</p>
             <button id="close-modal-btn" class="mt-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Close</button>
         </div>
     </div>
@@ -566,8 +566,8 @@
                         
                         // Reset zoom/position and show success message
                         currentScale = 1;
-                        updateImageTransform(item, currentScale, 0, 0);
-                        showMessage(`Photo added successfully to slot ${item.id}!`, 'success');
+                        updateImageTransform(item, currentSPhoto added successfullycale, 0, 0);
+                        showMessage(` to slot ${item.id}!`, 'success');
                         updateStatus(item.id, true);
                     };
                     reader.onerror = function() {
