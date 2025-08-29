@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Image Clock</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF CDN for generating PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- html2canvas CDN for converting HTML to Canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* General body and container styles for a clean layout */
+        body {
+            background-color: #f0f4f8; /* Light gray background color */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            flex-wrap: wrap; 
+            justify-content: center;
+        }
+        
+        /* New style for the options box on the left */
+        .options-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 1.5rem;
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
+            margin-top: 2rem; /* Align vertically with the clock */
+            min-width: 250px;
+        }
+        .options-box h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            margin-bottom: 0.5rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        /* Styles for the main clock container */
+        .clock-container {
+            position: relative;
+            width: 600px; /* Increased size */
+            height: 600px; /* Increased size */
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.3s ease-in-out;
+            margin: 2rem;
+            border: 2px solid #000;
+        }
+
+        .clock-container:hover {
+            transform: scale(1.05);
+        }
+
+        /* Analog clock hands and center dot */
+        .hand {
+            position: absolute;
+            background: #333;
+            border-radius: 50%;
+            transform-origin: center bottom;
+            z-index: 5;
+            transition: opacity 0.3s ease-in-out; /* Add transition for fade effect */
+        }
+        
+        .hour-hand {
+            width: 10px; /* Increased size */
+            height: 140px; /* Increased size */
+            background: #333;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .minute-hand {
+            width: 8px; /* Increased size */
+            height: 190px; /* Increased size */
+            background: #555;
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .second-hand {
+            width: 3px; /* Increased size */
+            height: 240px; /* Increased size */
+            background: #ef4444; /* red-500 */
+            bottom: 50%;
+            left: 50%;
+            transform: translateX(-50%) rotate(0deg);
+        }
+        
+        .center-dot {
+            position: absolute;
+            width: 25px; /* Increased size */
+            height: 25px; /* Increased size */
+            background-color: #333;
+            border-radius: 50%;
+            z-index: 15;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        /* New class to hide the hands and center dot */
+        .hide-hands .hand,
+        .hide-hands .center-dot {
+            opacity: 0;
+        }
+
+        /* Clock number positioning */
+        .clock-number {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Corrected positioning for the four main numbers */
+        #number-12 { top: 25px; left: 50%; transform: translateX(-50%); }
+        #number-3 { top: 50%; right: 25px; transform: translateY(-50%); }
+        #number-6 { bottom: 25px; left: 50%; transform: translateX(-50%); }
+        #number-9 { top: 50%; left: 25px; transform: translateY(-50%); }
+
+        /* New container for the image and controls */
+        .image-group {
+            position: absolute;
+            display: flex;
+            flex-direction: column; /* Stack image and controls vertically */
+            align-items: center;
+            gap: 0.5rem; /* Space between image and buttons */
+            width: 200px; /* Increased size */
+            height: 200px; /* Increased size */
+        }
+        
+        .image-and-controls {
+            position: relative;
+            width: 200px; /* Increased size */
+            height: 200px; /* Increased size */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* The full-size image that will be BLURRED, now with an SVG filter */
+        .background-image-blur {
+            position: absolute;
+            width: 200px; /* Increased size */
+            height: 200px; /* Increased size */
+            object-fit: cover;
+            filter: url(#image-blur-filter); /* Use the SVG filter for blurring */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 0;
+            pointer-events: none; /* Prevents clicks on this layer */
+            border-radius: 10px;
+            /* Using translate3d for smoother animation and to prevent blurring */
+            transform: scale(var(--zoom-level, 1)) translate3d(var(--translate-x, 0px), var(--translate-y, 0px), 0);
+        }
+
+        /* Image slot styles (for the CLEAR, circular part) */
+        .image-slot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px; /* Increased size */
+            height: 160px; /* Increased size */
+            border-radius: 50%;
+            overflow: hidden; /* This clips the inner image to a circle */
+            border: none;
+            box-shadow: 0 0 15px 5px rgba(255, 255, 255, 0.7), 
+                        0 0 30px 10px rgba(255, 255, 255, 0.3),
+                        inset 2px 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1; /* Ensures it is above the blurred image */
+        }
+        
+        /* Text for adding a image */
+        .image-slot .add-image-text {
+            color: #4B5563;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 0.5rem;
+            line-height: 1.2;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 2; /* Ensures text is above all image layers */
+        }
+
+        /* The actual image inside the circle, which will be CLEAR */
+        .image-slot .main-image {
+            position: relative; /* Stays within the clipped circle */
+            width: 100%;
+            height: 100%;
+            /* This property centers the image and makes it fill the container */
+            object-fit: cover; 
+            filter: none; /* No blur here */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 1;
+            /* Using translate3d for smoother animation and to prevent blurring */
+            transform: scale(var(--zoom-level, 1)) translate3d(var(--translate-x, 0px), var(--translate-y, 0px), 0);
+        }
+
+        /* Style for when a image is present */
+        .image-group.has-image .background-image-blur,
+        .image-group.has-image .main-image {
+            opacity: 1;
+        }
+        .image-slot.has-image .main-image {
+            cursor: grab;
+        }
+        .image-slot.has-image .main-image.dragging {
+            cursor: grabbing;
+        }
+        .image-group.has-image .add-image-text {
+            opacity: 0; /* Hides the text when a image is present */
+        }
+
+        /* Positioning the image slots */
+        #image-group-1 { top: 70px; left: 50%; transform: translateX(-50%); }
+        #image-group-2 { top: 50%; right: 70px; transform: translateY(-50%); }
+        #image-group-3 { bottom: 70px; left: 50%; transform: translateX(-50%); }
+        #image-group-4 { top: 50%; left: 70px; transform: translateY(-50%); }
+
+        .file-input { display: none; }
+
+        /* Styles for the zoom controls - now positioned below the image-and-controls container */
+        .image-controls {
+            display: flex;
+            gap: 5px;
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .image-group.has-image .image-controls,
+        .image-group:hover .image-controls {
+            opacity: 1;
+        }
+
+        .image-controls button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .image-controls button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Status table styles */
+        .status-table {
+            width: 250px;
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
+            margin-top: 2rem;
+        }
+
+        .status-table th, .status-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .status-table th {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        /* New class for the status text */
+        .status-text {
+            font-size: 1rem;
+            font-weight: bold;
+            transition: color 0.2s ease-in-out;
+        }
+        /* Style for the "uploaded" status */
+        .status-text.added {
+            color: #10B981; /* green-500 */
+        }
+        
+        /* High z-index for the modal to prevent clock hands from overlapping */
+        #processing-modal {
+            z-index: 9999; 
+        }
+        
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
+    <!-- Hidden SVG for the blur filter definition -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
+        <filter id="image-blur-filter">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
+        </filter>
+    </svg>
+
+    <!-- Main heading for the application -->
+    <h1 class="text-4xl font-bold text-center text-gray-800 my-8">Interactive Image Clock</h1>
+
+    <div class="main-container">
+        <!-- New: Options box for toggling clock pins and displaying status -->
+        <div class="options-box">
+            <div class="option-item">
+                <label for="pins-toggle" class="text-gray-700 font-medium cursor-pointer">Show Clock Pins</label>
+                <input type="checkbox" id="pins-toggle" checked>
+            </div>
+            
+            <div class="status-table">
+                <h2 class="text-xl font-bold mb-4">Image Status</h2>
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Images</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="status-row-1">
+                            <td>Image 1</td>
+                            <td id="status-1" class="status-text text-gray-500">Upload</td>
+                        </tr>
+                        <tr id="status-row-2">
+                            <td>Image 2</td>
+                            <td id="status-2" class="status-text text-gray-500">Upload</td>
+                        </tr>
+                        <tr id="status-row-3">
+                            <td>Image 3</td>
+                            <td id="status-3" class="status-text text-gray-500">Upload</td>
+                        </tr>
+                        <tr id="status-row-4">
+                            <td>Image 4</td>
+                            <td id="status-4" class="status-text text-gray-500">Upload</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="button-group">
+                <button id="submit-btn" class="px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-colors cursor-not-allowed" disabled>Submit Images</button>
+                <button id="generate-pdf-btn" class="px-6 py-3 bg-blue-500 text-white font-bold rounded-full shadow-lg transition-colors cursor-not-allowed" disabled>Generate PDF</button>
+            </div>
+        </div>
+
+        <!-- Main clock container -->
+        <div class="clock-container">
+            <!-- The four primary clock numbers positioned correctly -->
+            <div id="number-12" class="clock-number">12</div>
+            <div id="number-3" class="clock-number">3</div>
+            <div id="number-6" class="clock-number">6</div>
+            <div id="number-9" class="clock-number">9</div>
+            
+            <!-- Analog clock hands -->
+            <div id="hour-hand" class="hand hour-hand"></div>
+            <div id="minute-hand" class="hand minute-hand"></div>
+            <div id="second-hand" class="hand second-hand"></div>
+            <div class="center-dot"></div>
+            
+            <!-- Image slots with new structure -->
+            <div id="image-group-1" class="image-group">
+                <div class="image-and-controls">
+                    <img id="background-image-1" src="" alt="Blurred User Image" class="background-image-blur">
+                    <div id="image-1" class="image-slot">
+                        <span class="add-image-text">Add Image 1</span>
+                        <img id="main-image-1" src="" alt="User Image" class="main-image">
+                        <input type="file" id="file-1" class="file-input" accept="image/*">
+                    </div>
+                </div>
+                <!-- Zoom controls are now a sibling, not a child, of the image-and-controls container -->
+                <div class="image-controls">
+                    <button class="zoom-in" data-image-id="1">+</button>
+                    <button class="zoom-out" data-image-id="1">-</button>
+                </div>
+            </div>
+            <div id="image-group-2" class="image-group">
+                <div class="image-and-controls">
+                    <img id="background-image-2" src="" alt="Blurred User Image" class="background-image-blur">
+                    <div id="image-2" class="image-slot">
+                        <span class="add-image-text">Add Image 2</span>
+                        <img id="main-image-2" src="" alt="User Image" class="main-image">
+                        <input type="file" id="file-2" class="file-input" accept="image/*">
+                    </div>
+                </div>
+                <div class="image-controls">
+                    <button class="zoom-in" data-image-id="2">+</button>
+                    <button class="zoom-out" data-image-id="2">-</button>
+                </div>
+            </div>
+            <div id="image-group-3" class="image-group">
+                <div class="image-and-controls">
+                    <img id="background-image-3" src="" alt="Blurred User Image" class="background-image-blur">
+                    <div id="image-3" class="image-slot">
+                        <span class="add-image-text">Add Image 3</span>
+                        <img id="main-image-3" src="" alt="User Image" class="main-image">
+                        <input type="file" id="file-3" class="file-input" accept="image/*">
+                    </div>
+                </div>
+                <div class="image-controls">
+                    <button class="zoom-in" data-image-id="3">+</button>
+                    <button class="zoom-out" data-image-id="3">-</button>
+                </div>
+            </div>
+            <div id="image-group-4" class="image-group">
+                <div class="image-and-controls">
+                    <img id="background-image-4" src="" alt="Blurred User Image" class="background-image-blur">
+                    <div id="image-4" class="image-slot">
+                        <span class="add-image-text">Add Image 4</span>
+                        <img id="main-image-4" src="" alt="User Image" class="main-image">
+                        <input type="file" id="file-4" class="file-input" accept="image/*">
+                    </div>
+                </div>
+                <div class="image-controls">
+                    <button class="zoom-in" data-image-id="4">+</button>
+                    <button class="zoom-out" data-image-id="4">-</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="message-box" class="mt-4 p-3 bg-gray-200 text-gray-700 rounded-lg shadow-inner hidden"></div>
+
+    <!-- Processing Modal -->
+    <div id="processing-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <p id="modal-text" class="mt-4 text-gray-600">Your clock is in process. <b>Thank you</b></p>
+            <button id="close-modal-btn" class="mt-6 px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Get references to all the elements
+        const hourHand = document.getElementById('hour-hand');
+        const minuteHand = document.getElementById('minute-hand');
+        const secondHand = document.getElementById('second-hand');
+        const messageBox = document.getElementById('message-box');
+        const submitBtn = document.getElementById('submit-btn');
+        const generatePdfBtn = document.getElementById('generate-pdf-btn');
+        const processingModal = document.getElementById('processing-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalText = document.getElementById('modal-text');
+        const clockContainer = document.querySelector('.clock-container');
+        const pinsToggle = document.getElementById('pins-toggle');
+        
+        // Image slots and their corresponding file inputs
+        const imageItems = [
+            { id: '1', group: document.getElementById('image-group-1'), slot: document.getElementById('image-1'), img: document.getElementById('main-image-1'), backgroundImg: document.getElementById('background-image-1'), file: document.getElementById('file-1') },
+            { id: '2', group: document.getElementById('image-group-2'), slot: document.getElementById('image-2'), img: document.getElementById('main-image-2'), backgroundImg: document.getElementById('background-image-2'), file: document.getElementById('file-2') },
+            { id: '3', group: document.getElementById('image-group-3'), slot: document.getElementById('image-3'), img: document.getElementById('main-image-3'), backgroundImg: document.getElementById('background-image-3'), file: document.getElementById('file-3') },
+            { id: '4', group: document.getElementById('image-group-4'), slot: document.getElementById('image-4'), img: document.getElementById('main-image-4'), backgroundImg: document.getElementById('background-image-4'), file: document.getElementById('file-4') }
+        ];
+        // Get references to the status icons
+        const statusElements = {
+            '1': document.getElementById('status-1'),
+            '2': document.getElementById('status-2'),
+            '3': document.getElementById('status-3'),
+            '4': document.getElementById('status-4')
+        };
+
+        // Function to show a message to the user
+        function showMessage(text, type = 'info') {
+            messageBox.textContent = text;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.remove('bg-red-200', 'text-red-800', 'bg-green-200', 'text-green-800', 'bg-gray-200', 'text-gray-700');
+            if (type === 'error') {
+                messageBox.classList.add('bg-red-200', 'text-red-800');
+            } else if (type === 'success') {
+                messageBox.classList.add('bg-green-200', 'text-green-800');
+            } else {
+                messageBox.classList.add('bg-gray-200', 'text-gray-700');
+            }
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000); // Hide message after 3 seconds
+        }
+
+        // Function to update the analog clock
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const seconds = now.getSeconds();
+
+            // Calculate and set rotation for analog hands
+            const hourDeg = (hours % 12) * 30 + (minutes * 0.5); 
+            const minuteDeg = minutes * 6 + (seconds * 0.1); 
+            const secondDeg = seconds * 6; 
+
+            hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+            minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+            secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+        }
+        
+        // Set the clock to update every second
+        setInterval(updateClock, 1000);
+        updateClock(); // Initial call to set the time immediately
+
+        // Function to update the image transform (zoom and position) using CSS variables
+        function updateImageTransform(item, scale, translateX, translateY) {
+            item.img.style.setProperty('--zoom-level', scale);
+            item.img.style.setProperty('--translate-x', `${translateX}px`);
+            item.img.style.setProperty('--translate-y', `${translateY}px`);
+            
+            // Apply the same transform to the blurred background image
+            item.backgroundImg.style.setProperty('--zoom-level', scale);
+            item.backgroundImg.style.setProperty('--translate-x', `${translateX}px`);
+            item.backgroundImg.style.setProperty('--translate-y', `${translateY}px`);
+        }
+        
+        // Function to update the status table and button state
+        function updateStatus(id, hasImage) {
+            const statusElement = statusElements[id];
+            if (statusElement) {
+                if (hasImage) {
+                    statusElement.textContent = 'Uploaded';
+                    statusElement.classList.remove('text-gray-500');
+                    statusElement.classList.add('added');
+                } else {
+                    statusElement.textContent = 'Upload';
+                    statusElement.classList.remove('added');
+                    statusElement.classList.add('text-gray-500');
+                }
+            }
+            updateButtonStates();
+        }
+        
+        // Function to check if all image slots have an image
+        function checkAllImagesAdded() {
+            return imageItems.every(item => item.group.classList.contains('has-image'));
+        }
+
+        // Function to check if at least one image has been added
+        function checkAnyImageAdded() {
+            return imageItems.some(item => item.group.classList.contains('has-image'));
+        }
+
+        // Function to update the submit and PDF buttons' appearance and functionality
+        function updateButtonStates() {
+            // Update Submit button
+            if (checkAllImagesAdded()) {
+                submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                submitBtn.removeAttribute('disabled');
+            } else {
+                submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                submitBtn.setAttribute('disabled', 'true');
+            }
+
+            // Update Generate PDF button
+            if (checkAnyImageAdded()) {
+                generatePdfBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                generatePdfBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                generatePdfBtn.removeAttribute('disabled');
+            } else {
+                generatePdfBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                generatePdfBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                generatePdfBtn.setAttribute('disabled', 'true');
+            }
+        }
+
+        // --- New Functionality: Toggle Clock Hands Visibility ---
+        pinsToggle.addEventListener('change', () => {
+            if (pinsToggle.checked) {
+                clockContainer.classList.remove('hide-hands');
+            } else {
+                clockContainer.classList.add('hide-hands');
+            }
+        });
+        
+        // Add event listener for the submit button
+        submitBtn.addEventListener('click', () => {
+            // This check is a safeguard, but the disabled attribute should prevent this from firing
+            if (checkAllImagesAdded()) {
+                modalText.innerHTML = "Your clock is in process. <b>Thank you</b>";
+                processingModal.classList.remove('hidden');
+            } else {
+                showMessage('Please add all four images before submitting.', 'error');
+            }
+        });
+
+        // Add event listener for the modal close button
+        closeModalBtn.addEventListener('click', () => {
+            processingModal.classList.add('hidden');
+        });
+
+        // Add event listener for the new "Generate PDF" button
+        generatePdfBtn.addEventListener('click', async () => {
+            if (!checkAnyImageAdded()) {
+                showMessage('Please add at least one image to generate a PDF.', 'error');
+                return;
+            }
+
+            modalText.innerHTML = "Generating PDF. This may take a moment...";
+            processingModal.classList.remove('hidden');
+
+            try {
+                // Wait for the next frame to ensure the UI has updated
+                await new Promise(resolve => requestAnimationFrame(resolve));
+
+                const canvas = await html2canvas(clockContainer, { 
+                    scale: 2, // Increase scale for better resolution
+                    logging: true,
+                    useCORS: true 
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('interactive-image-clock.pdf');
+
+                modalText.innerHTML = "PDF generated successfully!";
+            } catch (error) {
+                console.error("PDF generation failed:", error);
+                modalText.innerHTML = "An error occurred while generating the PDF. Please try again.";
+            } finally {
+                setTimeout(() => {
+                    processingModal.classList.add('hidden');
+                }, 2000); // Keep modal visible for a short time to show status
+            }
+        });
+
+
+        // Add event listeners for each image item
+        imageItems.forEach(item => {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            let currentScale = 1;
+
+            // Clicking the image slot itself triggers the file input
+            item.slot.addEventListener('click', (event) => {
+                // Ensure the click is not on the image itself, which handles drag/drop
+                if (!event.target.closest('.main-image')) {
+                    item.file.click();
+                }
+            });
+
+            // Handle file selection
+            item.file.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const base64Image = e.target.result;
+                        // Set the clear and blurred image sources simultaneously
+                        item.img.src = base64Image;
+                        item.backgroundImg.src = base64Image;
+                        item.group.classList.add('has-image');
+                        
+                        // Reset zoom/position and show success message
+                        currentScale = 1;
+                        // Resetting the transform values to 0 centers the image
+                        updateImageTransform(item, currentScale, 0, 0); 
+                        showMessage(`Image added successfully to slot ${item.id}!`, 'success');
+                        updateStatus(item.id, true);
+                    };
+                    reader.onerror = function() {
+                        showMessage('Failed to load image. Please try again.', 'error');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Handle double-tap to remove an image
+            item.slot.addEventListener('dblclick', (event) => {
+                event.preventDefault(); 
+                
+                if (item.group.classList.contains('has-image')) {
+                    item.img.src = '';
+                    item.backgroundImg.src = '';
+                    item.group.classList.remove('has-image');
+                    currentScale = 1;
+                    updateImageTransform(item, currentScale, 0, 0);
+                    showMessage(`Image removed from slot ${item.id}!`, 'success');
+                    updateStatus(item.id, false);
+                }
+            });
+
+            // --- Drag and Drop Functionality ---
+            item.img.addEventListener('mousedown', (e) => {
+                if (item.group.classList.contains('has-image')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = true;
+                    item.img.classList.add('dragging');
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    initialY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
+                }
+            });
+
+            item.img.addEventListener('touchstart', (e) => {
+                if (item.group.classList.contains('has-image')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDragging = true;
+                    item.img.classList.add('dragging');
+                    const touch = e.touches[0];
+                    startX = touch.clientX;
+                    startY = touch.clientY;
+                    initialX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    initialY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
+                }
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    const newX = initialX + dx;
+                    const newY = initialY + dy;
+                    updateImageTransform(item, currentScale, newX, newY);
+                }
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (isDragging) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - startX;
+                    const dy = touch.clientY - startY;
+                    const newX = initialX + dx;
+                    const newY = initialY + dy;
+                    updateImageTransform(item, currentScale, newX, newY);
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    item.img.classList.remove('dragging');
+                }
+            });
+
+            document.addEventListener('touchend', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    item.img.classList.remove('dragging');
+                }
+            });
+
+            // --- Zoom Functionality ---
+            const zoomInBtn = item.group.querySelector('.zoom-in');
+            const zoomOutBtn = item.group.querySelector('.zoom-out');
+
+            if (zoomInBtn) {
+                zoomInBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentScale = currentScale < 2 ? currentScale + 0.1 : currentScale;
+                    const translateX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    const translateY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
+                    updateImageTransform(item, currentScale, translateX, translateY);
+                });
+            }
+
+            if (zoomOutBtn) {
+                zoomOutBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentScale = currentScale > 1 ? currentScale - 0.1 : currentScale;
+                    const translateX = parseFloat(item.img.style.getPropertyValue('--translate-x')) || 0;
+                    const translateY = parseFloat(item.img.style.getPropertyValue('--translate-y')) || 0;
+                    updateImageTransform(item, currentScale, translateX, translateY);
+                });
+            }
+        });
+
+        // Call this once on page load to set the initial state
+        updateButtonStates();
+    </script>
+</body>
+</html>
