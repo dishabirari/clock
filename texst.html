@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Photo Clock</title>
-    <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* General body and container styles for a clean layout */
@@ -27,38 +26,12 @@
             flex-wrap: wrap; 
             justify-content: center;
         }
-        
-        /* New style for the options box on the left */
-        .options-box {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 1.5rem;
-            background: #ffffff;
-            border-radius: 1rem;
-            box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
-            margin-top: 2rem; /* Align vertically with the clock */
-            min-width: 250px;
-        }
-        .options-box h2 {
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-        }
-        .option-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            margin-bottom: 0.5rem;
-        }
-
 
         /* Styles for the main clock container */
         .clock-container {
             position: relative;
-            width: 600px; /* Increased size */
-            height: 600px; /* Increased size */
+            width: 450px;
+            height: 450px;
             border-radius: 50%;
             background: #ffffff;
             box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
@@ -79,14 +52,14 @@
             position: absolute;
             background: #333;
             border-radius: 50%;
+            /* Fix: Transform origin should be at the bottom for rotation around the center dot */
             transform-origin: center bottom;
             z-index: 5;
-            transition: opacity 0.3s ease-in-out; /* Add transition for fade effect */
         }
-        
+        /* Fix: Corrected hand sizes and positioning to pivot from the center */
         .hour-hand {
-            width: 10px; /* Increased size */
-            height: 140px; /* Increased size */
+            width: 8px;
+            height: 100px;
             background: #333;
             bottom: 50%;
             left: 50%;
@@ -94,8 +67,8 @@
         }
 
         .minute-hand {
-            width: 8px; /* Increased size */
-            height: 190px; /* Increased size */
+            width: 6px;
+            height: 140px;
             background: #555;
             bottom: 50%;
             left: 50%;
@@ -103,8 +76,8 @@
         }
 
         .second-hand {
-            width: 3px; /* Increased size */
-            height: 240px; /* Increased size */
+            width: 2px;
+            height: 180px;
             background: #ef4444; /* red-500 */
             bottom: 50%;
             left: 50%;
@@ -113,19 +86,12 @@
         
         .center-dot {
             position: absolute;
-            width: 25px; /* Increased size */
-            height: 25px; /* Increased size */
+            width: 20px;
+            height: 20px;
             background-color: #333;
             border-radius: 50%;
             z-index: 15;
             box-shadow: 0 0 5px rgba(0,0,0,0.2);
-            transition: opacity 0.3s ease-in-out;
-        }
-        
-        /* New class to hide the hands and center dot */
-        .hide-hands .hand,
-        .hide-hands .center-dot {
-            opacity: 0;
         }
 
         /* Clock number positioning */
@@ -135,12 +101,11 @@
             font-weight: 700;
             color: #333;
         }
-
-        /* Corrected positioning for the four main numbers */
-        #number-12 { top: 25px; left: 50%; transform: translateX(-50%); }
-        #number-3 { top: 50%; right: 25px; transform: translateY(-50%); }
-        #number-6 { bottom: 25px; left: 50%; transform: translateX(-50%); }
-        #number-9 { top: 50%; left: 25px; transform: translateY(-50%); }
+        /* Fix: Corrected number positioning for better layout */
+        #number-12 { top: 20px; left: 50%; transform: translateX(-50%); }
+        #number-3 { top: 50%; right: 20px; transform: translateY(-50%); }
+        #number-6 { bottom: 20px; left: 50%; transform: translateX(-50%); }
+        #number-9 { top: 50%; left: 20px; transform: translateY(-50%); }
 
         /* New container for the photo and controls */
         .photo-group {
@@ -149,14 +114,14 @@
             flex-direction: column; /* Stack photo and controls vertically */
             align-items: center;
             gap: 0.5rem; /* Space between photo and buttons */
-            width: 200px; /* Increased size */
-            height: 200px; /* Increased size */
+            width: 150px;
+            height: 150px;
         }
         
         .photo-and-controls {
             position: relative;
-            width: 200px; /* Increased size */
-            height: 200px; /* Increased size */
+            width: 150px;
+            height: 150px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -165,8 +130,8 @@
         /* The full-size photo that will be BLURRED, now with an SVG filter */
         .background-photo-blur {
             position: absolute;
-            width: 200px; /* Increased size */
-            height: 200px; /* Increased size */
+            width: 150px; /* Sizing the container for the image */
+            height: 150px;
             object-fit: cover;
             filter: url(#photo-blur-filter); /* Use the SVG filter for blurring */
             opacity: 0;
@@ -184,11 +149,11 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 160px; /* Increased size */
-            height: 160px; /* Increased size */
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             overflow: hidden; /* This clips the inner photo to a circle */
-            border: 8px solid rgba(255, 255, 255, 0.8);
+            border: 4px solid rgba(255, 255, 255, 0.8);
             box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2), 2px 2px 5px rgba(0,0,0,0.2);
             cursor: pointer;
             transition: transform 0.2s ease-in-out;
@@ -240,10 +205,11 @@
         }
 
         /* Positioning the photo slots */
-        #photo-group-1 { top: 70px; left: 50%; transform: translateX(-50%); }
-        #photo-group-2 { top: 50%; right: 70px; transform: translateY(-50%); }
-        #photo-group-3 { bottom: 70px; left: 50%; transform: translateX(-50%); }
-        #photo-group-4 { top: 50%; left: 70px; transform: translateY(-50%); }
+        /* Fix: Adjusted positioning to be relative to the clock's center */
+        #photo-group-1 { top: 50px; left: 50%; transform: translateX(-50%); }
+        #photo-group-2 { top: 50%; right: 50px; transform: translateY(-50%); }
+        #photo-group-3 { bottom: 50px; left: 50%; transform: translateX(-50%); }
+        #photo-group-4 { top: 50%; left: 50px; transform: translateY(-50%); }
 
         .file-input { display: none; }
 
@@ -288,7 +254,6 @@
             border-radius: 1rem;
             padding: 1.5rem;
             box-shadow: 20px 20px 60px #d0d0d0, -20px -20px 60px #ffffff;
-            margin-top: 2rem;
         }
 
         .status-table th, .status-table td {
@@ -301,27 +266,29 @@
             font-weight: bold;
             color: #333;
         }
-        
-        /* New class for the status text */
-        .status-text {
-            font-size: 1rem;
-            font-weight: bold;
-            transition: color 0.2s ease-in-out;
+
+        .status-table .status-icon {
+            font-size: 1.5rem;
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
         }
-        /* Style for the "uploaded" status */
-        .status-text.added {
+
+        .status-table .status-icon.added {
             color: #10B981; /* green-500 */
+        }
+
+        .status-table .status-icon.empty {
+            color: #EF4444; /* red-500 */
         }
         
         /* High z-index for the modal to prevent clock hands from overlapping */
         #processing-modal {
             z-index: 9999; 
         }
-        
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col justify-center items-center min-h-screen p-4">
-    <!-- Hidden SVG for the blur filter definition -->
     <svg style="position: absolute; width: 0; height: 0; overflow: hidden;">
         <filter id="photo-blur-filter">
             <feGaussianBlur in="SourceGraphic" stdDeviation="8" />
@@ -329,60 +296,17 @@
     </svg>
 
     <div class="main-container">
-        <!-- New: Options box for toggling clock pins and displaying status -->
-        <div class="options-box">
-            <div class="option-item">
-                <label for="pins-toggle" class="text-gray-700 font-medium cursor-pointer">Show Clock Pins</label>
-                <input type="checkbox" id="pins-toggle" checked>
-            </div>
-            
-            <div class="status-table">
-                <h2 class="text-xl font-bold mb-4">Photo Status</h2>
-                <table class="w-full">
-                    <thead>
-                        <tr>
-                            <th>Photos </th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr id="status-row-1">
-                            <td>Photo 1</td>
-                            <td id="status-1" class="status-text text-gray-500">Upload</td>
-                        </tr>
-                        <tr id="status-row-2">
-                            <td>Photo 2</td>
-                            <td id="status-2" class="status-text text-gray-500">Upload</td>
-                        </tr>
-                        <tr id="status-row-3">
-                            <td>Photo 3</td>
-                            <td id="status-3" class="status-text text-gray-500">Upload</td>
-                        </tr>
-                        <tr id="status-row-4">
-                            <td>Photo 4</td>
-                            <td id="status-4" class="status-text text-gray-500">Upload</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <button id="submit-btn" class="mt-4 px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-colors cursor-not-allowed" disabled>Submit Photos</button>
-        </div>
-
-        <!-- Main clock container -->
         <div class="clock-container">
-            <!-- The four primary clock numbers positioned correctly -->
             <div id="number-12" class="clock-number">12</div>
             <div id="number-3" class="clock-number">3</div>
             <div id="number-6" class="clock-number">6</div>
             <div id="number-9" class="clock-number">9</div>
             
-            <!-- Analog clock hands -->
             <div id="hour-hand" class="hand hour-hand"></div>
             <div id="minute-hand" class="hand minute-hand"></div>
             <div id="second-hand" class="hand second-hand"></div>
             <div class="center-dot"></div>
             
-            <!-- Photo slots with new structure -->
             <div id="photo-group-1" class="photo-group">
                 <div class="photo-and-controls">
                     <img id="background-image-1" src="" alt="Blurred User Photo" class="background-photo-blur">
@@ -392,7 +316,6 @@
                         <input type="file" id="file-1" class="file-input" accept="image/*">
                     </div>
                 </div>
-                <!-- Zoom controls are now a sibling, not a child, of the photo-and-controls container -->
                 <div class="photo-controls">
                     <button class="zoom-in" data-photo-id="1">+</button>
                     <button class="zoom-out" data-photo-id="1">-</button>
@@ -441,11 +364,43 @@
                 </div>
             </div>
         </div>
+
+        <div class="flex flex-col items-center">
+            <div class="status-table">
+                <h2 class="text-xl font-bold mb-4">Photo Status</h2>
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th>Photos </th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr id="status-row-1">
+                            <td>Photo 1</td>
+                            <td id="status-1" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-2">
+                            <td>Photo 2</td>
+                            <td id="status-2" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-3">
+                            <td>Photo 3</td>
+                            <td id="status-3" class="status-icon empty">❌</td>
+                        </tr>
+                        <tr id="status-row-4">
+                            <td>Photo 4</td>
+                            <td id="status-4" class="status-icon empty">❌</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button id="submit-btn" class="mt-4 px-6 py-3 bg-gray-400 text-white font-bold rounded-full shadow-lg transition-colors cursor-not-allowed" disabled>Submit Photos</button>
+        </div>
     </div>
     
     <div id="message-box" class="mt-4 p-3 bg-gray-200 text-gray-700 rounded-lg shadow-inner hidden"></div>
 
-    <!-- Processing Modal -->
     <div id="processing-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
         <div class="bg-white p-8 rounded-lg shadow-xl text-center">
             <p class="mt-4 text-gray-600">Your clock is in process. <b>Thank you</b></p>
@@ -462,8 +417,6 @@
         const submitBtn = document.getElementById('submit-btn');
         const processingModal = document.getElementById('processing-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        const clockContainer = document.querySelector('.clock-container');
-        const pinsToggle = document.getElementById('pins-toggle');
         
         // Photo slots and their corresponding file inputs
         const photoItems = [
@@ -473,7 +426,7 @@
             { id: '4', group: document.getElementById('photo-group-4'), slot: document.getElementById('photo-4'), img: document.getElementById('image-4'), backgroundImg: document.getElementById('background-image-4'), file: document.getElementById('file-4') }
         ];
         // Get references to the status icons
-        const statusElements = {
+        const statusIcons = {
             '1': document.getElementById('status-1'),
             '2': document.getElementById('status-2'),
             '3': document.getElementById('status-3'),
@@ -505,10 +458,12 @@
             const seconds = now.getSeconds();
 
             // Calculate and set rotation for analog hands
-            const hourDeg = (hours % 12) * 30 + (minutes * 0.5); 
-            const minuteDeg = minutes * 6 + (seconds * 0.1); 
-            const secondDeg = seconds * 6; 
+            // Fix: The rotation calculation needs to be adjusted
+            const hourDeg = (hours % 12) * 30 + (minutes * 0.5); // 360/12 = 30 deg/hour, plus 0.5 deg/min for minute-based hour movement
+            const minuteDeg = minutes * 6 + (seconds * 0.1); // 360/60 = 6 deg/minute, plus 0.1 deg/sec for second-based minute movement
+            const secondDeg = seconds * 6; // 360/60 = 6 deg/second
 
+            // Fix: The transform needs to be rotate() first to pivot correctly, then translate back
             hourHand.style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
             minuteHand.style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
             secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
@@ -532,16 +487,16 @@
         
         // Function to update the status table and button state
         function updateStatus(id, hasImage) {
-            const statusElement = statusElements[id];
+            const statusElement = statusIcons[id];
             if (statusElement) {
                 if (hasImage) {
-                    statusElement.textContent = 'Uploaded';
-                    statusElement.classList.remove('text-gray-500');
+                    statusElement.textContent = '✅';
+                    statusElement.classList.remove('empty');
                     statusElement.classList.add('added');
                 } else {
-                    statusElement.textContent = 'Upload';
+                    statusElement.textContent = '❌';
                     statusElement.classList.remove('added');
-                    statusElement.classList.add('text-gray-500');
+                    statusElement.classList.add('empty');
                 }
             }
             updateSubmitButtonState();
@@ -564,15 +519,6 @@
                 submitBtn.setAttribute('disabled', 'true');
             }
         }
-
-        // --- New Functionality: Toggle Clock Hands Visibility ---
-        pinsToggle.addEventListener('change', () => {
-            if (pinsToggle.checked) {
-                clockContainer.classList.remove('hide-hands');
-            } else {
-                clockContainer.classList.add('hide-hands');
-            }
-        });
         
         // Add event listener for the submit button
         submitBtn.addEventListener('click', () => {
